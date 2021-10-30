@@ -7,10 +7,10 @@ import (
 )
 
 func CreateImage(image *models.Image) error {
-	create := db.GetDB().Create(image)
-	if create.Error != nil {
-		log.Fatalln(create.Error)
-		return create.Error
+	tx := db.GetDB().Create(image)
+	if tx.Error != nil {
+		log.Fatalln(tx.Error)
+		return tx.Error
 	}
 
 	return nil

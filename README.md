@@ -9,3 +9,6 @@ docker-compose up -d
 go install
 go run main.go
 ```
+
+### TODO
+- write tests

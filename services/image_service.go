@@ -37,7 +37,6 @@ func SaveImage(image *multipart.FileHeader, uploader string) (*models.Image, err
 
 	err := db.GetDB().Transaction(
 		func(tx *gorm.DB) error {
-
 			if err := repositories.CreateImage(&newImage); err != nil {
 				return err
 			}
@@ -57,8 +56,7 @@ func SaveImage(image *multipart.FileHeader, uploader string) (*models.Image, err
 				return err
 			}
 
-			fileName := generateFileName(newImage)
-			if err := minio.StoreImage(fileName, buf.Bytes()); err != nil {
+			if err := minio.StoreImage(generateFileName(newImage), buf.Bytes()); err != nil {
 				return err
 			}
 

@@ -13,16 +13,7 @@ import (
 var DB *gorm.DB
 
 func Init() {
-	c := config.GetConfig()
-	dsn := fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=true",
-		c.Database.DBUser,
-		c.Database.DBPassword,
-		c.Database.DBHost,
-		c.Database.DBPort,
-		c.Database.DBName,
-	)
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open(getDSN()), &gorm.Config{})
 	if err != nil {
 		log.Fatalln(err)
 		return
@@ -48,6 +39,20 @@ func migrateDB() {
 	if err := DB.AutoMigrate(&models.Image{}); err != nil {
 		log.Fatalln(err)
 	}
+}
+
+func getDSN() string {
+	dbConfig := config.GetConfig().Database
+	dsn := fmt.Sprintf(
+		"%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=true",
+		dbConfig.DBUser,
+		dbConfig.DBPassword,
+		dbConfig.DBHost,
+		dbConfig.DBPort,
+		dbConfig.DBName,
+	)
+
+	return dsn
 }
 
 func GetDB() *gorm.DB {

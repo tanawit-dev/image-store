@@ -58,10 +58,10 @@ func StoreImage(fileName string, content []byte) error {
 
 func GetImage(fileName string) ([]byte, error) {
 	object, err := minioClient.GetObject(ctx, BucketName, fileName, minio.GetObjectOptions{})
-	defer object.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer object.Close()
 
 	imageContent, err := ioutil.ReadAll(object)
 	if err != nil {
