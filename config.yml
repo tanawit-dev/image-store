@@ -1,0 +1,12 @@
+database:
+  dbname: image-store
+  dbuser: user
+  dbpassword: password
+  dbhost: localhost
+  dbport: 3307
+minio:
+  host: localhost
+  port: 9000
+  access_key: user
+  secret_key: password
+
