@@ -12,6 +12,6 @@ go run main.go
 
 ### TODO
 - [ ] 100% test coverage
-- [ ] DI
+- [x] DI
 - [ ] Support GraphQL
 - [ ] Support gRPC
