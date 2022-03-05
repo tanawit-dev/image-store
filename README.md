@@ -11,4 +11,7 @@ go run main.go
 ```
 
 ### TODO
-- write tests
+- [ ] 100% test coverage
+- [ ] DI
+- [ ] Support GraphQL
+- [ ] Support gRPC
