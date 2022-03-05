@@ -12,18 +12,21 @@ import (
 
 const ImageContentType = "image/jpeg"
 
-func RegisterImageRouter(router *gin.RouterGroup) {
-	router.GET("/:id", getImage)
-	router.POST("/", uploadImage)
+type ImageController struct {
+	service services.ImageService
 }
 
-func getImage(c *gin.Context) {
+func ProvideImageController(service services.ImageService) ImageController {
+	return ImageController{service: service}
+}
+
+func (con ImageController) GetImage(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 
-	imageContent, err := services.GetImage(uint(id))
+	imageContent, err := con.service.GetImage(uint(id))
 	if err != nil {
 		if utils.IsNotFoundError(err) {
 			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("not found image id: %v", id)})
@@ -35,7 +38,7 @@ func getImage(c *gin.Context) {
 	c.Data(http.StatusOK, ImageContentType, imageContent)
 }
 
-func uploadImage(c *gin.Context) {
+func (con ImageController) UploadImage(c *gin.Context) {
 	request := UploadImageRequest{}
 	err := c.ShouldBind(&request)
 	if err != nil {
@@ -43,16 +46,18 @@ func uploadImage(c *gin.Context) {
 		return
 	}
 
-	createdImage, err := services.SaveImage(request.Image, request.Uploader)
+	createdImage, err := con.service.SaveImage(request.Image, request.Uploader)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, UploadImageResponse{
-		Url:      createdImage.GetUrl(),
-		Uploader: createdImage.Uploader,
-	})
+	c.JSON(
+		http.StatusOK, UploadImageResponse{
+			Url:      createdImage.GetUrl(),
+			Uploader: createdImage.Uploader,
+		},
+	)
 }
 
 type UploadImageRequest struct {

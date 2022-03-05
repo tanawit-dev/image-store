@@ -1,29 +1,19 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/tanawit-dev/image-store/common/db"
-	"github.com/tanawit-dev/image-store/common/minio"
-	"github.com/tanawit-dev/image-store/config"
-	"github.com/tanawit-dev/image-store/routers"
+	"fmt"
 	"log"
+	"os"
 )
 
 func main() {
-	config.Init()
-	db.Init()
-	minio.Init()
-	startServer()
-}
+	server, err := InitializeApplication()
+	if err != nil {
+		fmt.Printf("failed to create event: %s \n", err)
+		os.Exit(2)
+	}
 
-func startServer() {
-	r := gin.Default()
-
-	v1 := r.Group("/api")
-
-	routers.RegisterImageRouter(v1.Group("/images"))
-
-	err := r.Run("localhost:8080")
+	err = server.Run("localhost:8080")
 	if err != nil {
 		log.Fatalln(err)
 		return

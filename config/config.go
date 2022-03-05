@@ -20,14 +20,14 @@ type MinioConfiguration struct {
 	SecretKey string `mapstructure:"secret_key"`
 }
 
-type Configurations struct {
+type Configuration struct {
 	Database DatabaseConfiguration
 	Minio    MinioConfiguration
 }
 
-var config Configurations
+func ProvideConfig() Configuration {
+	var config Configuration
 
-func Init() {
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
 	viper.SetConfigType("yml")
@@ -41,8 +41,6 @@ func Init() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-}
 
-func GetConfig() Configurations {
 	return config
 }

@@ -1,13 +1,21 @@
 package repositories
 
 import (
-	"github.com/tanawit-dev/image-store/common/db"
 	"github.com/tanawit-dev/image-store/models"
+	"gorm.io/gorm"
 	"log"
 )
 
-func CreateImage(image *models.Image) error {
-	tx := db.GetDB().Create(image)
+type ImageRepository struct {
+	db *gorm.DB
+}
+
+func ProvideImageRepository(db *gorm.DB) ImageRepository {
+	return ImageRepository{db: db}
+}
+
+func (repo ImageRepository) Create(image *models.Image) error {
+	tx := repo.db.Create(image)
 	if tx.Error != nil {
 		log.Fatalln(tx.Error)
 		return tx.Error
@@ -16,9 +24,9 @@ func CreateImage(image *models.Image) error {
 	return nil
 }
 
-func FindImageById(id uint) (models.Image, error) {
+func (repo ImageRepository) FindById(id uint) (models.Image, error) {
 	var imageModel models.Image
-	tx := db.GetDB().First(&imageModel, id)
+	tx := repo.db.First(&imageModel, id)
 
 	return imageModel, tx.Error
 }

@@ -15,49 +15,13 @@ const BucketName = "image-storage"
 const Location = "ap-southeast-1"
 const contentType = "image/jpeg"
 
-var minioClient *minio.Client
-var ctx = context.Background()
-
-func Init() {
-	minioConfig := config.GetConfig().Minio
-	endpoint := fmt.Sprintf("%s:%s", minioConfig.Host, minioConfig.Port)
-
-	mc, err := minio.New(
-		endpoint, &minio.Options{
-			Creds:  credentials.NewStaticV4(minioConfig.AccessKey, minioConfig.SecretKey, ""),
-			Secure: false,
-		},
-	)
-	if err != nil {
-		log.Fatalln(err)
-		return
-	}
-
-	minioClient = mc
-
-	log.Printf("mino has started suceesfully")
-
-	createBucket()
+type ImageStorage struct {
+	minioClient *minio.Client
+	ctx         context.Context
 }
 
-func StoreImage(fileName string, content []byte) error {
-	reader := bytes.NewReader(content)
-	_, err := minioClient.PutObject(
-		ctx,
-		BucketName, fileName, reader, reader.Size(), minio.PutObjectOptions{ContentType: contentType},
-	)
-	if err != nil {
-		log.Fatalln(err)
-		return err
-	}
-
-	log.Println("upload image successfully")
-
-	return nil
-}
-
-func GetImage(fileName string) ([]byte, error) {
-	object, err := minioClient.GetObject(ctx, BucketName, fileName, minio.GetObjectOptions{})
+func (service ImageStorage) Load(fileName string) ([]byte, error) {
+	object, err := service.minioClient.GetObject(service.ctx, BucketName, fileName, minio.GetObjectOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +35,46 @@ func GetImage(fileName string) ([]byte, error) {
 	return imageContent, nil
 }
 
-func createBucket() {
+func (service ImageStorage) Store(fileName string, content []byte) error {
+	reader := bytes.NewReader(content)
+	_, err := service.minioClient.PutObject(
+		service.ctx,
+		BucketName, fileName, reader, reader.Size(), minio.PutObjectOptions{ContentType: contentType},
+	)
+	if err != nil {
+		log.Fatalln(err)
+		return err
+	}
+
+	log.Println("upload image successfully")
+
+	return nil
+}
+
+func ProvideImageStorage(config config.Configuration) (ImageStorage, error) {
+	ctx := context.Background()
+	endpoint := fmt.Sprintf("%s:%s", config.Minio.Host, config.Minio.Port)
+
+	mc, err := minio.New(
+		endpoint, &minio.Options{
+			Creds:  credentials.NewStaticV4(config.Minio.AccessKey, config.Minio.SecretKey, ""),
+			Secure: false,
+		},
+	)
+
+	if err != nil {
+		log.Fatalln(err)
+		return ImageStorage{}, err
+	}
+
+	log.Printf("mino has started suceesfully")
+
+	defer createBucket(mc, ctx)
+
+	return ImageStorage{minioClient: mc, ctx: ctx}, nil
+}
+
+func createBucket(minioClient *minio.Client, ctx context.Context) {
 	err := minioClient.MakeBucket(ctx, BucketName, minio.MakeBucketOptions{Region: Location})
 	if err != nil {
 		exists, err := minioClient.BucketExists(ctx, BucketName)

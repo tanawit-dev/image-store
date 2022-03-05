@@ -3,7 +3,6 @@ package services
 import (
 	"bytes"
 	"fmt"
-	"github.com/tanawit-dev/image-store/common/db"
 	"github.com/tanawit-dev/image-store/common/minio"
 	"github.com/tanawit-dev/image-store/models"
 	"github.com/tanawit-dev/image-store/repositories"
@@ -15,13 +14,23 @@ import (
 
 const FileExtension = "jpeg"
 
-func GetImage(id uint) ([]byte, error) {
-	imageModel, err := repositories.FindImageById(id)
+type ImageService struct {
+	repo         repositories.ImageRepository
+	imageStorage minio.ImageStorage
+	db           *gorm.DB
+}
+
+func ProvideImageService(repo repositories.ImageRepository, store minio.ImageStorage, db *gorm.DB) ImageService {
+	return ImageService{repo: repo, imageStorage: store, db: db}
+}
+
+func (service ImageService) GetImage(id uint) ([]byte, error) {
+	imageModel, err := service.repo.FindById(id)
 	if err != nil {
 		return nil, err
 	}
 
-	imageContent, err := minio.GetImage(generateFileName(imageModel))
+	imageContent, err := service.imageStorage.Load(generateFileName(imageModel))
 	if err != nil {
 		return nil, err
 	}
@@ -29,15 +38,15 @@ func GetImage(id uint) ([]byte, error) {
 	return imageContent, nil
 }
 
-func SaveImage(image *multipart.FileHeader, uploader string) (*models.Image, error) {
+func (service ImageService) SaveImage(image *multipart.FileHeader, uploader string) (*models.Image, error) {
 	newImage := models.Image{
 		FileName: image.Filename,
 		Uploader: uploader,
 	}
 
-	err := db.GetDB().Transaction(
+	err := service.db.Transaction(
 		func(tx *gorm.DB) error {
-			if err := repositories.CreateImage(&newImage); err != nil {
+			if err := service.repo.Create(&newImage); err != nil {
 				return err
 			}
 
@@ -56,7 +65,7 @@ func SaveImage(image *multipart.FileHeader, uploader string) (*models.Image, err
 				return err
 			}
 
-			if err := minio.StoreImage(generateFileName(newImage), buf.Bytes()); err != nil {
+			if err := service.imageStorage.Store(generateFileName(newImage), buf.Bytes()); err != nil {
 				return err
 			}
 

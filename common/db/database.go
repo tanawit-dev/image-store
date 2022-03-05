@@ -10,51 +10,40 @@ import (
 	"time"
 )
 
-var DB *gorm.DB
+func ProvideDatabase(config config.Configuration) (*gorm.DB, error) {
+	dsn := fmt.Sprintf(
+		"%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=true",
+		config.Database.DBUser,
+		config.Database.DBPassword,
+		config.Database.DBHost,
+		config.Database.DBPort,
+		config.Database.DBName,
+	)
 
-func Init() {
-	db, err := gorm.Open(mysql.Open(getDSN()), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalln(err)
-		return
+		return nil, err
 	}
 
 	sqlDB, err := db.DB()
 	if err != nil {
 		log.Fatalln(err)
-		return
+		return nil, err
 	}
-	sqlDB.SetMaxIdleConns(10)
-	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetMaxIdleConns(10) // TODO read from config
+	sqlDB.SetMaxOpenConns(100) // TODO read from config
 	sqlDB.SetConnMaxLifetime(time.Hour)
-
-	DB = db
 
 	log.Println("connect database successfully")
 
-	migrateDB()
+	defer migrateDB(db)
+
+	return db, nil
 }
 
-func migrateDB() {
-	if err := DB.AutoMigrate(&models.Image{}); err != nil {
+func migrateDB(db *gorm.DB) {
+	if err := db.AutoMigrate(&models.Image{}); err != nil {
 		log.Fatalln(err)
 	}
-}
-
-func getDSN() string {
-	dbConfig := config.GetConfig().Database
-	dsn := fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=true",
-		dbConfig.DBUser,
-		dbConfig.DBPassword,
-		dbConfig.DBHost,
-		dbConfig.DBPort,
-		dbConfig.DBName,
-	)
-
-	return dsn
-}
-
-func GetDB() *gorm.DB {
-	return DB
 }
