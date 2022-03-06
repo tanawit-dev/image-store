@@ -7,15 +7,11 @@ import (
 )
 
 type ImageRepository struct {
-	db *gorm.DB
-}
-
-func ProvideImageRepository(db *gorm.DB) ImageRepository {
-	return ImageRepository{db: db}
+	DB *gorm.DB
 }
 
 func (repo ImageRepository) Create(image *models.Image) error {
-	tx := repo.db.Create(image)
+	tx := repo.DB.Create(image)
 	if tx.Error != nil {
 		log.Fatalln(tx.Error)
 		return tx.Error
@@ -26,7 +22,7 @@ func (repo ImageRepository) Create(image *models.Image) error {
 
 func (repo ImageRepository) FindById(id uint) (models.Image, error) {
 	var imageModel models.Image
-	tx := repo.db.First(&imageModel, id)
+	tx := repo.DB.First(&imageModel, id)
 
 	return imageModel, tx.Error
 }

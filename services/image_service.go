@@ -15,22 +15,18 @@ import (
 const FileExtension = "jpeg"
 
 type ImageService struct {
-	repo         repositories.ImageRepository
-	imageStorage minio.ImageStorage
-	db           *gorm.DB
-}
-
-func ProvideImageService(repo repositories.ImageRepository, store minio.ImageStorage, db *gorm.DB) ImageService {
-	return ImageService{repo: repo, imageStorage: store, db: db}
+	Repo         repositories.ImageRepository
+	ImageStorage minio.ImageStorage
+	DB           *gorm.DB
 }
 
 func (service ImageService) GetImage(id uint) ([]byte, error) {
-	imageModel, err := service.repo.FindById(id)
+	imageModel, err := service.Repo.FindById(id)
 	if err != nil {
 		return nil, err
 	}
 
-	imageContent, err := service.imageStorage.Load(generateFileName(imageModel))
+	imageContent, err := service.ImageStorage.Load(generateFileName(imageModel))
 	if err != nil {
 		return nil, err
 	}
@@ -44,9 +40,9 @@ func (service ImageService) SaveImage(image *multipart.FileHeader, uploader stri
 		Uploader: uploader,
 	}
 
-	err := service.db.Transaction(
+	err := service.DB.Transaction(
 		func(tx *gorm.DB) error {
-			if err := service.repo.Create(&newImage); err != nil {
+			if err := service.Repo.Create(&newImage); err != nil {
 				return err
 			}
 
@@ -65,7 +61,7 @@ func (service ImageService) SaveImage(image *multipart.FileHeader, uploader stri
 				return err
 			}
 
-			if err := service.imageStorage.Store(generateFileName(newImage), buf.Bytes()); err != nil {
+			if err := service.ImageStorage.Store(generateFileName(newImage), buf.Bytes()); err != nil {
 				return err
 			}
 

@@ -1,4 +1,5 @@
-//+build wireinject
+//go:build wireinject
+// +build wireinject
 
 package main
 
@@ -14,16 +15,17 @@ import (
 	"github.com/tanawit-dev/image-store/services"
 )
 
+var ImageRepositoryStructProvider = wire.Struct(new(repositories.ImageRepository), "*")
+var ImageServiceStructProvider = wire.Struct(new(services.ImageService), "*")
+var ImageControllerStructProvider = wire.Struct(new(routers.ImageController), "*")
+var ImageModuleSet = wire.NewSet(ImageControllerStructProvider, ImageServiceStructProvider, ImageRepositoryStructProvider)
+
+var InfraSet = wire.NewSet(config.ProvideConfig, db.ProvideDatabase, minio.ProvideImageStorage, server.ProvideServer)
+var ModuleSet = wire.NewSet(ImageModuleSet)
+var RootSet = wire.NewSet(InfraSet, ModuleSet)
+
 func InitializeApplication() (*gin.Engine, error) {
-	wire.Build(
-		config.ProvideConfig,
-		db.ProvideDatabase,
-		minio.ProvideImageStorage,
-		repositories.ProvideImageRepository,
-		services.ProvideImageService,
-		routers.ProvideImageController,
-		server.ProvideServer,
-	)
+	wire.Build(RootSet)
 
 	return &gin.Engine{}, nil
 }

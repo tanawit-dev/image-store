@@ -6,18 +6,16 @@ import (
 	"os"
 )
 
+const Port = 8080
+
 func main() {
 	server, err := InitializeApplication()
 	if err != nil {
-		fmt.Printf("failed to create event: %s \n", err)
+		fmt.Printf("failed to intialize app: %s \n", err)
 		os.Exit(2)
 	}
 
-	err = server.Run("localhost:8080")
-	if err != nil {
-		log.Fatalln(err)
-		return
-	}
+	_ = server.Run(fmt.Sprintf("localhost:%d", Port))
 
-	log.Printf("server is running")
+	log.Printf("server is running on port %d", Port)
 }

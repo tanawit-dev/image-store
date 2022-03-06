@@ -13,11 +13,11 @@ import (
 const ImageContentType = "image/jpeg"
 
 type ImageController struct {
-	service services.ImageService
+	Service services.ImageService
 }
 
 func ProvideImageController(service services.ImageService) ImageController {
-	return ImageController{service: service}
+	return ImageController{Service: service}
 }
 
 func (con ImageController) GetImage(c *gin.Context) {
@@ -26,7 +26,7 @@ func (con ImageController) GetImage(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 
-	imageContent, err := con.service.GetImage(uint(id))
+	imageContent, err := con.Service.GetImage(uint(id))
 	if err != nil {
 		if utils.IsNotFoundError(err) {
 			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("not found image id: %v", id)})
@@ -46,7 +46,7 @@ func (con ImageController) UploadImage(c *gin.Context) {
 		return
 	}
 
-	createdImage, err := con.service.SaveImage(request.Image, request.Uploader)
+	createdImage, err := con.Service.SaveImage(request.Image, request.Uploader)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
